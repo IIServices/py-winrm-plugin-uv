@@ -1,8 +1,11 @@
 try:
-	import os; os.environ['PATH']
+    import os
+
+    os.environ["PATH"]
 except:
-	import os
-	os.environ.setdefault('PATH', '')
+    import os
+
+    os.environ.setdefault("PATH", "")
 import winrm
 import argparse
 import sys
@@ -34,6 +37,7 @@ else:
 
 try:
     import requests.packages.urllib3
+
     requests.packages.urllib3.disable_warnings()
     URLLIB_INSTALLED = True
 except ImportError as e:
@@ -70,24 +74,24 @@ except ImportError as ie:
 try:
     import pexpect
 
-    if hasattr(pexpect, 'spawn'):
+    if hasattr(pexpect, "spawn"):
         argspec = getargspec(pexpect.spawn.__init__)
-        if 'echo' in argspec.args:
+        if "echo" in argspec.args:
             HAS_PEXPECT = True
 except ImportError as e:
     HAS_PEXPECT = False
 
-log_level = 'INFO'
-if os.environ.get('RD_JOB_LOGLEVEL') == 'DEBUG':
-    log_level = 'DEBUG'
+log_level = "INFO"
+if os.environ.get("RD_JOB_LOGLEVEL") == "DEBUG":
+    log_level = "DEBUG"
 else:
-    log_level = 'ERROR'
+    log_level = "ERROR"
 
 # end
 
 console = logging.StreamHandler()
 console.setFormatter(ColoredFormatter(colored_formatter.format()))
-console.stream=sys.stdout
+console.stream = sys.stdout
 
 log = logging.getLogger()
 log.addHandler(console)
@@ -105,8 +109,7 @@ def httpclient_logging_patch(level=logging.DEBUG):
 
 
 def _clean_error_msg(self, msg):
-    """converts a Powershell CLIXML message to a more human readable string
-    """
+    """converts a Powershell CLIXML message to a more human readable string"""
     # TODO prepare unit test, beautify code
     # if the msg does not start with this, return it as is
     if type(msg) == bytes and msg.startswith(b"#< CLIXML\r\n"):
@@ -129,8 +132,10 @@ def _clean_error_msg(self, msg):
             # if any of the above fails, the msg was not true xml
             # print a warning and return the orignal string
             # TODO do not print, raise user defined error instead
-            print("Warning: there was a problem converting the Powershell"
-                  " error message: %s" % (e))
+            print(
+                "Warning: there was a problem converting the Powershell"
+                " error message: %s" % (e)
+            )
         else:
             # if new_msg was populated, that's our error message
             # otherwise the original error message will be used
@@ -142,26 +147,24 @@ def _clean_error_msg(self, msg):
 
 requests.packages.urllib3.disable_warnings()
 
-if os.environ.get('RD_CONFIG_DEBUG') == 'true':
-    log_level = 'DEBUG'
+if os.environ.get("RD_CONFIG_DEBUG") == "true":
+    log_level = "DEBUG"
 else:
-    log_level = 'ERROR'
+    log_level = "ERROR"
 
 logging.basicConfig(
     stream=sys.stdout,
     level=getattr(logging, log_level),
-    format='%(levelname)s: %(name)s: %(message)s'
+    format="%(levelname)s: %(name)s: %(message)s",
 )
-log = logging.getLogger('winrm-filecopier')
+log = logging.getLogger("winrm-filecopier")
 
 
 class RemoteCommandError(Exception):
-    def __init__(self, command, return_code, std_out='', std_err=''):
+    def __init__(self, command, return_code, std_out="", std_err=""):
         super(RemoteCommandError, self).__init__(
             'Remote execution of "{}" failed with exit code {}. '
-            'STDOUT: {}. STDERR: {}.'.format(
-                command, return_code, std_out, std_err
-            )
+            "STDOUT: {}. STDERR: {}.".format(command, return_code, std_out, std_err)
         )
 
 
@@ -170,55 +173,61 @@ class WinRmError(RemoteCommandError):
 
 
 class CopyFiles(object):
-
     def __init__(self, session, retry, retry_delay):
         self.session = session
         self.retry = retry
         self.retry_delay = retry_delay
 
-
-    def winrm_upload(self,
-                    remote_path,
-                    remote_filename,
-                    local_path,
-                    step=2048,
-                    quiet=True,
-                    override=False):
-
-        if remote_path.endswith('/') or remote_path.endswith('\\'):
+    def winrm_upload(
+        self,
+        remote_path,
+        remote_filename,
+        local_path,
+        step=2048,
+        quiet=True,
+        override=False,
+    ):
+        if remote_path.endswith("/") or remote_path.endswith("\\"):
             full_path = remote_path + remote_filename
         else:
             full_path = remote_path + "\\" + remote_filename
 
         print("coping file %s to %s" % (local_path, full_path))
 
-        self.session.run_ps('if (!(Test-Path {0})) {{ New-Item -ItemType directory -Path {0} }}'.format(remote_path),
-                            retry=self.retry,
-                            retry_delay=self.retry_delay)
+        self.session.run_ps(
+            "if (!(Test-Path {0})) {{ New-Item -ItemType directory -Path {0} }}".format(
+                remote_path
+            ),
+            retry=self.retry,
+            retry_delay=self.retry_delay,
+        )
 
         if override:
-            self.session.run_ps('if ((Test-Path {0} -PathType Leaf)) {{ rm {0} }}'.format(full_path), retry=self.retry, retry_delay=self.retry_delay)
+            self.session.run_ps(
+                "if ((Test-Path {0} -PathType Leaf)) {{ rm {0} }}".format(full_path),
+                retry=self.retry,
+                retry_delay=self.retry_delay,
+            )
 
         size = os.stat(local_path).st_size
-        with open(local_path, 'rb') as f:
+        with open(local_path, "rb") as f:
             for i in range(0, size, step):
                 script = (
-                    'add-content -value '
+                    "add-content -value "
                     '$([System.Convert]::FromBase64String("{}")) '
-                    '-encoding byte -path {}'.format(
-                        base64.b64encode(f.read(step)).decode(),
-                        full_path
+                    "-encoding byte -path {}".format(
+                        base64.b64encode(f.read(step)).decode(), full_path
                     )
                 )
                 while True:
                     result = self.session.run_ps(script)
-                    code=result.status_code
-                    stdout=result.std_out
-                    stderr=result.std_err
+                    code = result.status_code
+                    stdout = result.std_out
+                    stderr = result.std_err
 
                     if code == 0:
                         break
-                    elif code == 1 and 'used by another process' in stderr:
+                    elif code == 1 and "used by another process" in stderr:
                         time.sleep(0.1)
                     else:
                         raise WinRmError(script, code, stdout, stderr)
@@ -227,28 +236,25 @@ class CopyFiles(object):
                     if transferred > size:
                         transferred = size
                     progress_blocks = transferred * 30 // size
-                    percentage_string = str(
-                        (100 * transferred) // size
-                    ) + ' %'
+                    percentage_string = str((100 * transferred) // size) + " %"
                     percentage_string = (
-                        ' ' * (10 - len(percentage_string)) +
-                        percentage_string
+                        " " * (10 - len(percentage_string)) + percentage_string
                     )
                     print(percentage_string)
                     sys.stdout.flush()
 
 
-parser = argparse.ArgumentParser(description='Run Bolt command.')
-parser.add_argument('hostname', help='the hostname')
-parser.add_argument('source', help='Source File')
-parser.add_argument('destination', help='Destination File')
+parser = argparse.ArgumentParser(description="Run Bolt command.")
+parser.add_argument("hostname", help="the hostname")
+parser.add_argument("source", help="Source File")
+parser.add_argument("destination", help="Destination File")
 
 args = parser.parse_args()
 
-#it is necesarry to avoid the debug error
+# it is necesarry to avoid the debug error
 print(args.destination)
 
-password=None
+password = None
 authentication = "basic"
 transport = "http"
 port = "5985"
@@ -259,7 +265,7 @@ kinit = None
 krb5config = None
 krbdelegation = False
 forceTicket = False
-override=False
+override = False
 enabledHttpDebug = False
 readtimeout = None
 operationtimeout = None
@@ -269,7 +275,7 @@ certpath = None
 username = None
 winrmproxy = None
 
-if os.environ.get('RD_CONFIG_OVERRIDE') == 'true':
+if os.environ.get("RD_CONFIG_OVERRIDE") == "true":
     override = True
 
 if "RD_CONFIG_AUTHTYPE" in os.environ:
@@ -300,20 +306,20 @@ if "RD_CONFIG_WINRMPROXY" in os.environ:
     winrmproxy = os.getenv("RD_CONFIG_WINRMPROXY")
 
 if "RD_OPTION_USERNAME" in os.environ and os.getenv("RD_OPTION_USERNAME"):
-    #take user from job
-    username = os.getenv("RD_OPTION_USERNAME").strip('\'')
+    # take user from job
+    username = os.getenv("RD_OPTION_USERNAME").strip("'")
 else:
     # take user from node
     if "RD_NODE_USERNAME" in os.environ and os.getenv("RD_NODE_USERNAME"):
-        username = os.getenv("RD_NODE_USERNAME").strip('\'')
+        username = os.getenv("RD_NODE_USERNAME").strip("'")
     else:
         # take user from project
         if "RD_CONFIG_USERNAME" in os.environ and os.getenv("RD_CONFIG_USERNAME"):
-            username = os.getenv("RD_CONFIG_USERNAME").strip('\'')
+            username = os.getenv("RD_CONFIG_USERNAME").strip("'")
 
 if "RD_OPTION_WINRMPASSWORD" in os.environ and os.getenv("RD_OPTION_WINRMPASSWORD"):
-    #take password from job
-    password = os.getenv("RD_OPTION_WINRMPASSWORD").strip('\'')
+    # take password from job
+    password = os.getenv("RD_OPTION_WINRMPASSWORD").strip("'")
 else:
     if "RD_CONFIG_PASSWORD_STORAGE_PATH" in os.environ:
         password = os.getenv("RD_CONFIG_PASSWORD_STORAGE_PATH")
@@ -355,29 +361,31 @@ if "RD_CONFIG_RETRYCONNECTIONDELAY" in os.environ:
 if enabledHttpDebug:
     httpclient_logging_patch(logging.DEBUG)
 
-endpoint = transport+'://'+args.hostname+':'+port
+endpoint = transport + "://" + args.hostname + ":" + port
 arguments = {"transport": authentication}
 
-if(nossl == True):
+if nossl == True:
     arguments["server_cert_validation"] = "ignore"
 else:
-    if(transport=="https"):
+    if transport == "https":
         arguments["server_cert_validation"] = "validate"
         arguments["ca_trust_path"] = certpath
 
 arguments["credssp_disable_tlsv1_2"] = diabletls12
 
-if(winrmproxy):
+if winrmproxy:
     arguments["proxy"] = winrmproxy
 
-if(readtimeout):
+if readtimeout:
     arguments["read_timeout_sec"] = readtimeout
 
-if(operationtimeout):
+if operationtimeout:
     arguments["operation_timeout_sec"] = operationtimeout
 
 if not URLLIB_INSTALLED:
-    log.error("request and urllib3 not installed, try: pip install requests &&  pip install urllib3")
+    log.error(
+        "request and urllib3 not installed, try: pip install requests &&  pip install urllib3"
+    )
     sys.exit(1)
 
 if not WINRM_INSTALLED:
@@ -401,13 +409,17 @@ if authentication == "ntlm" and not HAS_NTLM:
     sys.exit(1)
 
 if authentication == "kerberos":
-    k5bConfig = kerberosauth.KerberosAuth(krb5config=krb5config, log=log, kinit_command=kinit,username=username, password=password)
+    k5bConfig = kerberosauth.KerberosAuth(
+        krb5config=krb5config,
+        log=log,
+        kinit_command=kinit,
+        username=username,
+        password=password,
+    )
     k5bConfig.get_ticket()
     arguments["kerberos_delegation"] = krbdelegation
 
-session = winrm.Session(target=endpoint,
-                        auth=(username, password),
-                        **arguments)
+session = winrm.Session(target=endpoint, auth=(username, password), **arguments)
 
 winrm.Session.run_cmd = winrm_session.run_cmd
 winrm.Session.run_ps = winrm_session.run_ps
@@ -422,21 +434,22 @@ if filename is None:
     filename = os.path.basename(args.source)
 
 if filename in args.destination:
-    destination = destination.replace(filename, '')
+    destination = destination.replace(filename, "")
 else:
     isFile = common.check_is_file(args.destination)
     if isFile:
         filename = common.get_file(args.destination)
-        destination = destination.replace(filename, '')
+        destination = destination.replace(filename, "")
     else:
         filename = os.path.basename(args.source)
 
 if not os.path.isdir(args.source):
-    copy.winrm_upload(remote_path=destination,
-                      remote_filename=filename,
-                      local_path=args.source,
-                      quiet=quiet,
-                      override=override)
+    copy.winrm_upload(
+        remote_path=destination,
+        remote_filename=filename,
+        local_path=args.source,
+        quiet=quiet,
+        override=override,
+    )
 else:
     log.warn("The source is a directory, skipping copy")
-

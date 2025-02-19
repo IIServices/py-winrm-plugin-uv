@@ -1,8 +1,11 @@
 try:
-	import os; os.environ['PATH']
+    import os
+
+    os.environ["PATH"]
 except:
-	import os
-	os.environ.setdefault('PATH', '')
+    import os
+
+    os.environ.setdefault("PATH", "")
 import sys
 import argparse
 import logging
@@ -11,7 +14,7 @@ from colored_formatter import ColoredFormatter
 import kerberosauth
 
 
-#checking and importing dependencies
+# checking and importing dependencies
 ISPY3 = sys.version_info[0] == 3
 WINRM_INSTALLED = False
 URLLIB_INSTALLED = False
@@ -27,6 +30,7 @@ else:
 
 try:
     import requests.packages.urllib3
+
     requests.packages.urllib3.disable_warnings()
     URLLIB_INSTALLED = True
 except ImportError as e:
@@ -63,48 +67,48 @@ except ImportError as ie:
 try:
     import pexpect
 
-    if hasattr(pexpect, 'spawn'):
+    if hasattr(pexpect, "spawn"):
         argspec = getargspec(pexpect.spawn.__init__)
-        if 'echo' in argspec.args:
+        if "echo" in argspec.args:
             HAS_PEXPECT = True
 except ImportError as e:
     HAS_PEXPECT = False
 
-log_level = 'INFO'
-if os.environ.get('RD_JOB_LOGLEVEL') == 'DEBUG':
-    log_level = 'DEBUG'
+log_level = "INFO"
+if os.environ.get("RD_JOB_LOGLEVEL") == "DEBUG":
+    log_level = "DEBUG"
 else:
-    log_level = 'ERROR'
+    log_level = "ERROR"
 
 ##end
 
 
-log_level = 'INFO'
-if os.environ.get('RD_JOB_LOGLEVEL') == 'DEBUG':
-    log_level = 'DEBUG'
+log_level = "INFO"
+if os.environ.get("RD_JOB_LOGLEVEL") == "DEBUG":
+    log_level = "DEBUG"
 else:
-    log_level = 'ERROR'
+    log_level = "ERROR"
 
 console = logging.StreamHandler()
 console.setFormatter(ColoredFormatter(colored_formatter.format()))
-console.stream=sys.stdout
+console.stream = sys.stdout
 
 log = logging.getLogger()
 log.addHandler(console)
 log.setLevel(log_level)
 
-parser = argparse.ArgumentParser(description='Run Bolt command.')
-parser.add_argument('--username', help='the username')
-parser.add_argument('--hostname', help='the hostname')
-parser.add_argument('--password', help='Password')
-parser.add_argument('--authentication', help='authentication', default="basic")
-parser.add_argument('--transport', help='transport',default="http")
-parser.add_argument('--port', help='port',default="5985")
-parser.add_argument('--nossl', help='nossl',default="False")
-parser.add_argument('--diabletls12', help='diabletls12',default="False")
-parser.add_argument('--debug', help='debug',default="False")
-parser.add_argument('--certpath', help='certpath')
-parser.add_argument('--krb5config', help='krb5config',default="/etc/krb5.conf")
+parser = argparse.ArgumentParser(description="Run Bolt command.")
+parser.add_argument("--username", help="the username")
+parser.add_argument("--hostname", help="the hostname")
+parser.add_argument("--password", help="Password")
+parser.add_argument("--authentication", help="authentication", default="basic")
+parser.add_argument("--transport", help="transport", default="http")
+parser.add_argument("--port", help="port", default="5985")
+parser.add_argument("--nossl", help="nossl", default="False")
+parser.add_argument("--diabletls12", help="diabletls12", default="False")
+parser.add_argument("--debug", help="debug", default="False")
+parser.add_argument("--certpath", help="certpath")
+parser.add_argument("--krb5config", help="krb5config", default="/etc/krb5.conf")
 
 
 args = parser.parse_args()
@@ -189,7 +193,7 @@ if "RD_CONFIG_KRBDELEGATION" in os.environ:
     else:
         krbdelegation = False
 
-endpoint=transport+'://'+hostname+':'+port
+endpoint = transport + "://" + hostname + ":" + port
 
 log.debug("------------------------------------------")
 log.debug("endpoint:" + endpoint)
@@ -202,13 +206,15 @@ log.debug("krb5config:" + krb5config)
 log.debug("kinit command:" + kinit)
 log.debug("kerberos delegation:" + str(krbdelegation))
 
-if(certpath):
+if certpath:
     log.debug("certpath:" + certpath)
 log.debug("------------------------------------------")
 
 
 if not URLLIB_INSTALLED:
-    log.error("request and urllib3 not installed, try: pip install requests &&  pip install urllib3")
+    log.error(
+        "request and urllib3 not installed, try: pip install requests &&  pip install urllib3"
+    )
     sys.exit(1)
 
 if not WINRM_INSTALLED:
@@ -231,32 +237,36 @@ if authentication == "ntlm" and not HAS_NTLM:
     log.error("NTLM not installed, try: pip install requests_ntlm")
     sys.exit(1)
 
-arguments={}
+arguments = {}
 arguments["transport"] = authentication
 
-if(nossl == True):
+if nossl == True:
     arguments["server_cert_validation"] = "ignore"
 else:
-    if(transport=="https"):
+    if transport == "https":
         arguments["server_cert_validation"] = "validate"
         arguments["ca_trust_path"] = certpath
 
 arguments["credssp_disable_tlsv1_2"] = diabletls12
 
 if authentication == "kerberos":
-    k5bConfig = kerberosauth.KerberosAuth(krb5config=krb5config, log=log, kinit_command=kinit,username=username, password=password)
+    k5bConfig = kerberosauth.KerberosAuth(
+        krb5config=krb5config,
+        log=log,
+        kinit_command=kinit,
+        username=username,
+        password=password,
+    )
     k5bConfig.get_ticket()
     arguments["kerberos_delegation"] = krbdelegation
 
-session = winrm.Session(target=endpoint,
-                         auth=(username, password),
-                         **arguments)
+session = winrm.Session(target=endpoint, auth=(username, password), **arguments)
 
 exec_command = "ipconfig"
 result = session.run_cmd(exec_command)
 print(result.std_out)
 
-if(result.std_err):
+if result.std_err:
     print("Connection with host %s fail" % hostname)
     sys.exit(1)
 else:

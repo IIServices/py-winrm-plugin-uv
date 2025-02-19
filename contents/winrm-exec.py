@@ -1,9 +1,13 @@
 import argparse
+
 try:
-	import os; os.environ['PATH']
+    import os
+
+    os.environ["PATH"]
 except:
-	import os
-	os.environ.setdefault('PATH', '')
+    import os
+
+    os.environ.setdefault("PATH", "")
 import sys
 import winrm_session
 import threading
@@ -13,17 +17,20 @@ import kerberosauth
 import common
 from colored_formatter import ColoredFormatter
 
+
 class SuppressFilter(logging.Filter):
     def filter(self, record):
-        return 'wsman' not in record.getMessage()
+        return "wsman" not in record.getMessage()
+
 
 try:
     from urllib3.connectionpool import log
-    #log.addFilter(SuppressFilter())
+    # log.addFilter(SuppressFilter())
 except:
     pass
 
 import http.client
+
 httpclient_logger = logging.getLogger("http.client")
 
 
@@ -35,7 +42,7 @@ def httpclient_logging_patch(level=logging.DEBUG):
     http.client.HTTPConnection.debuglevel = 1
 
 
-#checking and importing dependencies
+# checking and importing dependencies
 ISPY3 = sys.version_info[0] == 3
 WINRM_INSTALLED = False
 URLLIB_INSTALLED = False
@@ -51,6 +58,7 @@ else:
 
 try:
     import requests.packages.urllib3
+
     requests.packages.urllib3.disable_warnings()
     URLLIB_INSTALLED = True
 except ImportError as e:
@@ -87,23 +95,23 @@ except ImportError as ie:
 try:
     import pexpect
 
-    if hasattr(pexpect, 'spawn'):
+    if hasattr(pexpect, "spawn"):
         argspec = getargspec(pexpect.spawn.__init__)
-        if 'echo' in argspec.args:
+        if "echo" in argspec.args:
             HAS_PEXPECT = True
 except ImportError as e:
     HAS_PEXPECT = False
 
-if os.environ.get('RD_JOB_LOGLEVEL') == 'DEBUG':
-    log_level = 'DEBUG'
+if os.environ.get("RD_JOB_LOGLEVEL") == "DEBUG":
+    log_level = "DEBUG"
 else:
-    log_level = 'INFO'
+    log_level = "INFO"
 
 ##end
 
 console = logging.StreamHandler()
 console.setFormatter(ColoredFormatter(colored_formatter.format()))
-console.stream=sys.stdout
+console.stream = sys.stdout
 log = logging.getLogger()
 log.addHandler(console)
 log.setLevel(log_level)
@@ -112,17 +120,17 @@ requests_log = logging.getLogger("requests.packages.urllib3")
 requests_log.setLevel(logging.DEBUG)
 requests_log.propagate = True
 
-parser = argparse.ArgumentParser(description='Run Bolt command.')
-parser.add_argument('hostname', help='the hostname')
+parser = argparse.ArgumentParser(description="Run Bolt command.")
+parser.add_argument("hostname", help="the hostname")
 args = parser.parse_args()
 
-password=None
+password = None
 authentication = "basic"
 transport = "http"
 port = "5985"
-nossl=False
-diabletls12=False
-debug=False
+nossl = False
+diabletls12 = False
+debug = False
 shell = "cmd"
 certpath = None
 krb5config = None
@@ -180,9 +188,9 @@ if "RD_CONFIG_OPERATIONTIMEOUT" in os.environ:
     operationtimeout = os.getenv("RD_CONFIG_OPERATIONTIMEOUT")
 
 if "RD_CONFIG_CLEANESCAPING" in os.environ:
-     if os.getenv("RD_CONFIG_CLEANESCAPING") == "true":
+    if os.getenv("RD_CONFIG_CLEANESCAPING") == "true":
         cleanescapingflg = True
-     else:
+    else:
         cleanescapingflg = False
 
 if "RD_CONFIG_WINRMPROXY" in os.environ:
@@ -205,33 +213,38 @@ exec_command = os.getenv("RD_EXEC_COMMAND")
 log.debug("Command will be executed: " + exec_command)
 
 if cleanescapingflg:
-     exec_command = common.removeSimpleQuotes(exec_command)
-     log.debug("Command escaped will be executed: " + exec_command)
+    exec_command = common.removeSimpleQuotes(exec_command)
+    log.debug("Command escaped will be executed: " + exec_command)
 
-endpoint=transport+'://'+args.hostname+':'+port
+endpoint = transport + "://" + args.hostname + ":" + port
 
 if "RD_OPTION_USERNAME" in os.environ and os.getenv("RD_OPTION_USERNAME"):
-    log.debug('Using option.username: %s' % os.environ['RD_OPTION_USERNAME'])
-    #take user from job
-    username = os.getenv("RD_OPTION_USERNAME").strip('\'')
+    log.debug("Using option.username: %s" % os.environ["RD_OPTION_USERNAME"])
+    # take user from job
+    username = os.getenv("RD_OPTION_USERNAME").strip("'")
 else:
     # take user from node
     if "RD_NODE_USERNAME" in os.environ and os.getenv("RD_NODE_USERNAME"):
-        log.debug('Using username from node definition: %s' % os.environ['RD_NODE_USERNAME'])
-        username = os.getenv("RD_NODE_USERNAME").strip('\'')
+        log.debug(
+            "Using username from node definition: %s" % os.environ["RD_NODE_USERNAME"]
+        )
+        username = os.getenv("RD_NODE_USERNAME").strip("'")
     else:
         # take user from project
         if "RD_CONFIG_USERNAME" in os.environ and os.getenv("RD_CONFIG_USERNAME"):
-            log.debug('Using username from project definition: %s' % os.environ['RD_CONFIG_USERNAME'])
-            username = os.getenv("RD_CONFIG_USERNAME").strip('\'')
+            log.debug(
+                "Using username from project definition: %s"
+                % os.environ["RD_CONFIG_USERNAME"]
+            )
+            username = os.getenv("RD_CONFIG_USERNAME").strip("'")
 
 if "RD_OPTION_WINRMPASSWORD" in os.environ and os.getenv("RD_OPTION_WINRMPASSWORD"):
-    log.debug('Using option.winrmpassword')
-    #take password from job
-    password = os.getenv("RD_OPTION_WINRMPASSWORD").strip('\'')
+    log.debug("Using option.winrmpassword")
+    # take password from job
+    password = os.getenv("RD_OPTION_WINRMPASSWORD").strip("'")
 else:
     if "RD_CONFIG_PASSWORD_STORAGE_PATH" in os.environ:
-        log.debug('Using password from node')
+        log.debug("Using password from node")
         password = os.getenv("RD_CONFIG_PASSWORD_STORAGE_PATH")
 
 if "RD_CONFIG_KRB5CONFIG" in os.environ:
@@ -246,7 +259,7 @@ if "RD_CONFIG_KRBDELEGATION" in os.environ:
     else:
         krbdelegation = False
 
-DEFAULT_CHARSET = 'utf-8'
+DEFAULT_CHARSET = "utf-8"
 output_charset = DEFAULT_CHARSET
 if "RD_NODE_OUTPUT_CHARSET" in os.environ:
     output_charset = os.getenv("RD_NODE_OUTPUT_CHARSET")
@@ -275,7 +288,9 @@ if enabledHttpDebug:
     httpclient_logging_patch(logging.DEBUG)
 
 if not URLLIB_INSTALLED:
-    log.error("request and urllib3 not installed, try: pip install requests &&  pip install urllib3")
+    log.error(
+        "request and urllib3 not installed, try: pip install requests &&  pip install urllib3"
+    )
     sys.exit(1)
 
 if not WINRM_INSTALLED:
@@ -301,39 +316,45 @@ if authentication == "ntlm" and not HAS_NTLM:
 arguments = {}
 arguments["transport"] = authentication
 
-if(nossl == True):
+if nossl == True:
     arguments["server_cert_validation"] = "ignore"
 else:
-    if(transport == "https"):
+    if transport == "https":
         arguments["server_cert_validation"] = "validate"
         arguments["ca_trust_path"] = certpath
 
-if(readtimeout):
+if readtimeout:
     arguments["read_timeout_sec"] = readtimeout
 
-if(winrmproxy):
+if winrmproxy:
     arguments["proxy"] = winrmproxy
 
-if(operationtimeout):
+if operationtimeout:
     arguments["operation_timeout_sec"] = operationtimeout
 
 arguments["credssp_disable_tlsv1_2"] = diabletls12
 
 if authentication == "kerberos":
-    k5bConfig = kerberosauth.KerberosAuth(krb5config=krb5config, log=log, kinit_command=kinit,username=username, password=password)
+    k5bConfig = kerberosauth.KerberosAuth(
+        krb5config=krb5config,
+        log=log,
+        kinit_command=kinit,
+        username=username,
+        password=password,
+    )
     k5bConfig.get_ticket()
     arguments["kerberos_delegation"] = krbdelegation
 
-session = winrm.Session(target=endpoint,
-                        auth=(username, password),
-                        **arguments)
+session = winrm.Session(target=endpoint, auth=(username, password), **arguments)
 
 winrm.Session.run_cmd = winrm_session.run_cmd
 winrm.Session.run_ps = winrm_session.run_ps
 winrm.Session._clean_error_msg = winrm_session._clean_error_msg
 winrm.Session._strip_namespace = winrm_session._strip_namespace
 
-tsk = winrm_session.RunCommand(session, shell, exec_command, retryconnection, retryconnectiondelay, output_charset)
+tsk = winrm_session.RunCommand(
+    session, shell, exec_command, retryconnection, retryconnectiondelay, output_charset
+)
 t = threading.Thread(target=tsk.get_response)
 t.start()
 realstdout = sys.stdout
@@ -345,12 +366,12 @@ lastpos = 0
 lasterrorpos = 0
 
 while True:
-    t.join(.1)
+    t.join(0.1)
 
     try:
         if sys.stdout.tell() != lastpos:
             sys.stdout.seek(lastpos)
-            read=sys.stdout.read()
+            read = sys.stdout.read()
             if isinstance(read, str):
                 realstdout.write(read)
             else:
@@ -362,7 +383,7 @@ while True:
             log.error(e)
     except Exception as e:
         log.error(e)
-    
+
     lastpos = sys.stdout.tell()
 
     if not t.is_alive():
@@ -373,7 +394,7 @@ sys.stderr.seek(0)
 sys.stdout = realstdout
 sys.stderr = realstderr
 
-if exitBehaviour == 'console':
+if exitBehaviour == "console":
     if tsk.e_std:
         log.error("Execution finished with the following error")
         log.error(tsk.e_std)
@@ -382,7 +403,9 @@ if exitBehaviour == 'console':
         sys.exit(tsk.stat)
 else:
     if tsk.stat != 0:
-        log.error("Execution finished with the following exit code: {} ".format(tsk.stat))
+        log.error(
+            "Execution finished with the following exit code: {} ".format(tsk.stat)
+        )
         log.error(tsk.stat)
         log.error(tsk.e_std)
 

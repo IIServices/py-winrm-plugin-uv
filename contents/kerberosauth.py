@@ -15,8 +15,6 @@ class KerberosAuth(object):
         self.username = username
         self.password = password
 
-
-
     def get_ticket(self):
         kinit = [self.kinit_command]
 
@@ -25,11 +23,11 @@ class KerberosAuth(object):
         kinit_arg.append("-V")
         kinit_arg.append(self.username)
 
-        self.log.debug("running kinit %s" %kinit)
+        self.log.debug("running kinit %s" % kinit)
 
-        krb5env=()
-        if(self.krb5config):
-            os.environ["KRB5_CONFIG"]=self.krb5config
+        krb5env = ()
+        if self.krb5config:
+            os.environ["KRB5_CONFIG"] = self.krb5config
             krb5env = dict(KRB5_CONFIG=self.krb5config)
 
         try:
@@ -44,7 +42,7 @@ class KerberosAuth(object):
 
         output = process.read()
         process.wait()
-        self.log.debug("Exist status: %s" %process.exitstatus)
+        self.log.debug("Exist status: %s" % process.exitstatus)
 
         exitCode = process.exitstatus
 
@@ -55,25 +53,24 @@ class KerberosAuth(object):
 
         self.log.debug("kinit succeeded for %s" % self.username)
 
-
-    #just for macos (skipped by the moment)
+    # just for macos (skipped by the moment)
     def check_ticket(self):
         try:
-
             klist_command = ["klist"]
             kinit_arg = []
             kinit_arg.append("--list-all")
             kinit_arg.append("--json")
-            self.log.debug("running klist %s %s" % (klist_command,kinit_arg))
+            self.log.debug("running klist %s %s" % (klist_command, kinit_arg))
 
             krb5env = ()
-            if (self.krb5config):
+            if self.krb5config:
                 os.environ["KRB5_CONFIG"] = self.krb5config
                 krb5env = dict(KRB5_CONFIG=self.krb5config)
 
             try:
-                process = pexpect.spawn(klist_command.pop(0), kinit_arg, timeout=60,
-                                        env=krb5env, echo=False)
+                process = pexpect.spawn(
+                    klist_command.pop(0), kinit_arg, timeout=60, env=krb5env, echo=False
+                )
             except pexpect.ExceptionPexpect as err:
                 msg = "Error checking klist %s" % err
                 self.log.error(msg)
@@ -88,11 +85,13 @@ class KerberosAuth(object):
             results = json.loads(output)
 
             for item in results:
-                ticket_name=item["Name"]
-                expired=item["Expired"]
+                ticket_name = item["Name"]
+                expired = item["Expired"]
 
                 if ticket_name.upper() == self.username.upper():
-                    self.log.debug("Ticket found for user %s, expired: %s"%(ticket_name, expired))
+                    self.log.debug(
+                        "Ticket found for user %s, expired: %s" % (ticket_name, expired)
+                    )
                     if expired == "no":
                         self.log.debug("Ticket not expired, skipping kinit")
 
@@ -100,5 +99,5 @@ class KerberosAuth(object):
 
             return False
         except Exception as e:
-            self.log.debug("error running klist command : %s" %e)
+            self.log.debug("error running klist command : %s" % e)
             return False
