@@ -18,17 +18,10 @@ providers:
     description: Executing Scripts or Commands on remote Windows computer
     service: NodeExecutor
     plugin-type: script
-    script-interpreter: /home/uv/uv ${config.uvcommand}
+    script-interpreter: /home/uv/uv run python -u
     script-file: winrm-exec.py
     script-args: ${node.hostname}
     config:
-      - name: uvcommand
-        title: Uv Command
-        description: "UV Command to run. Need to do a sync first to initialize"
-        type: Select
-        values: "sync,run python -u"
-        default: "run python -u"
-        required: true
       - name: authtype
         title: Authentication Type
         description: "Authentication Type. It can be overwriting at node level using `winrm-authtype`"
