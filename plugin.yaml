@@ -18,7 +18,7 @@ providers:
     description: Executing Scripts or Commands on remote Windows computer
     service: NodeExecutor
     plugin-type: script
-    script-interpreter: /home/uv/uv run python -u
+    script-interpreter: /home/uv/uv run --project /var/lib/rundeck/libext/cache/py-winrm-plugin-0.1.0-SNAPSHOT python -u
     script-file: winrm-exec.py
     script-args: ${node.hostname}
     config:
