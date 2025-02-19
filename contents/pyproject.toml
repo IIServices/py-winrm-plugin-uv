@@ -1,0 +1,9 @@
+[project]
+name = "contents"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "pywinrm>=0.5.0",
+    "requests-credssp>=2.0.0",
+    "requests-kerberos>=0.15.0",
+]
