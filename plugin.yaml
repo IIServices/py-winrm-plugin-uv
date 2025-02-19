@@ -18,10 +18,16 @@ providers:
     description: Executing Scripts or Commands on remote Windows computer
     service: NodeExecutor
     plugin-type: script
-    script-interpreter: /home/uv/uv run --project /var/lib/rundeck/libext/cache/py-winrm-plugin-0.1.0-SNAPSHOT python -u
+    script-interpreter: /home/uv/uv run --project ${config.uvproject} python -u
     script-file: winrm-exec.py
     script-args: ${node.hostname}
     config:
+      - name: uvproject
+        title: UV Project Directory
+        description: "Project directory containing a pyproject.toml with pywinrm and any optional dependencies added"
+        type: String
+        default: "/var/lib/rundeck/libext/cache/py-winrm-plugin-0.1.0-SNAPSHOT"
+        required: true
       - name: authtype
         title: Authentication Type
         description: "Authentication Type. It can be overwriting at node level using `winrm-authtype`"
@@ -219,10 +225,16 @@ providers:
     description: Copying files to remote Windows computer
     service: FileCopier
     plugin-type: script
-    script-interpreter: /home/uv/uv run python -u
+    script-interpreter: /home/uv/uv run --project ${config.uvproject} python -u
     script-file: winrm-filecopier.py
     script-args: ${node.hostname} ${file-copy.file} ${file-copy.destination}
     config:
+      - name: uvproject
+        title: UV Project Directory
+        description: "Project directory containing a pyproject.toml with pywinrm and any optional dependencies added"
+        type: String
+        default: "/var/lib/rundeck/libext/cache/py-winrm-plugin-0.1.0-SNAPSHOT"
+        required: true
       - name: authtype
         title: Authentication Type
         description: "Authentication Type. It can be overwriting at node level using `winrm-authtype`"
@@ -399,10 +411,16 @@ providers:
     description: Check the connection with a remote node using winrm-python
     service: WorkflowStep
     plugin-type: script
-    script-interpreter: /home/uv/uv run python -u
+    script-interpreter: /home/uv/uv run --project ${config.uvproject} python -u
     script-file: winrm-check.py
     script-args: --username ${config.username} --hostname ${config.hostname} --password ${config.password_storage_path} --authentication ${config.authtype} --transport ${config.winrmtransport} --port ${config.winrmport} --nossl ${config.nossl} --debug ${config.debug} --certpath ${config.certpath}
     config:
+      - name: uvproject
+        title: UV Project Directory
+        description: "Project directory containing a pyproject.toml with pywinrm and any optional dependencies added"
+        type: String
+        default: "/var/lib/rundeck/libext/cache/py-winrm-plugin-0.1.0-SNAPSHOT"
+        required: true
       - name: hostname
         title: Hostname
         description: "Window's Hostname"
