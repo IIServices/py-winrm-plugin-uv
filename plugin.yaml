@@ -13,7 +13,7 @@ tags:
     - NodeExecutor
     - FileCopier
 providers:
-  - name: WinRMPython
+  - name: WinRMPythonCustom
     title: WinRM Node Executor Python
     description: Executing Scripts or Commands on remote Windows computer
     service: NodeExecutor
@@ -222,7 +222,7 @@ providers:
         renderingOptions:
           groupName: Connection
           instance-scope-node-attribute: "winrm-retry-connection-delay"
-  - name: WinRMcpPython
+  - name: WinRMcpPythonCustom
     title: WinRM Python File Copier
     description: Copying files to remote Windows computer
     service: FileCopier
@@ -410,7 +410,7 @@ providers:
         renderingOptions:
           groupName: Connection
           instance-scope-node-attribute: "winrm-retry-connection-delay"
-  - name: WinRMCheck
+  - name: WinRMCheckCustom
     title: WinRM Check Step
     description: Check the connection with a remote node using winrm-python
     service: WorkflowStep
